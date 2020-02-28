@@ -53,7 +53,8 @@ import time
 #triple saut homme et femme dans un fichier Excel.
 
 
-
+#Création d'une liste des URL (hommes+femmes), d'une liste de genre(M ou W) et d'une liste des années
+######################################################################################################
 annee=1891
 sexe = 'M'
 url = []
@@ -62,8 +63,8 @@ genre=[]
 
 while annee<=2019 :
     
-    b = 'http://trackfield.brinkster.net/More.asp?Year={}&EventCode={}F4'.format(annee, sexe)
-    url.append(b)
+    u = 'http://trackfield.brinkster.net/More.asp?Year={}&EventCode={}F4'.format(annee, sexe)
+    url.append(u)
     years.append(annee)
     genre.append(sexe)
     annee=annee+1
@@ -71,29 +72,25 @@ annee=1891
 sexe = 'W'
 while annee<=2019 :
     
-    b = 'http://trackfield.brinkster.net/More.asp?Year={}&EventCode={}F4'.format(annee, sexe)
-    url.append(b)
+    u = 'http://trackfield.brinkster.net/More.asp?Year={}&EventCode={}F4'.format(annee, sexe)
+    url.append(u)
     years.append(annee)
     genre.append(sexe)
     annee=annee+1
 
-
+######################################################################################################
 test = True
-tb=[]
-
-
-
-        
-for i,b,s in zip(years,url,genre) :
+tab_final=[]
+#Récupération des données (Boucle sur les trois liste)        
+for ann,u,s in zip(years,url,genre) :
     
-    # b = 'http://trackfield.brinkster.net/More.asp?Year={}&EventCode={}F4'.format(i, sexe)
-    
+    #Try / except en cas de saturation du serveur######################################################
     test = True
-    print(b)
+    print(u)
     while test :
         try:
             print('try')
-            x = requests.get(b)
+            x = requests.get(u)
             print('requet ok')
             test = False
 
@@ -102,38 +99,43 @@ for i,b,s in zip(years,url,genre) :
             time.sleep(2)
             test = True
             
-            
+    ##########################################################################################        
     print('debut traitement')
-    ls=[]
+    lst=[]
     
     soup = BeautifulSoup(x.content,'html.parser')
 
         
     
     for p in soup.find_all('td', attrs={"bgcolor":"#F3F2EE"}):
+        #on enregistre pas les lignes == indoor
         if p.text !=   'Indoor Results'  :
-            ls.append(p.text)          
+            lst.append(p.text)          
         
-
-    ls = ls[1:]   
-    temp=[]
-        
-    ls = np.reshape(ls, (int(len(ls)/8), 8))
-    print(len(ls))
+    #Suppression de la 1ere ligne (le titre)
+    lst = lst[1:]   
     
-    for lign in range(len(ls)) :        
-        an=(i,s)
-        temp=np.append(ls[lign,:],an)          
-        tb.append(temp)
+    lst_temp=[]
+    #Redimension de la liste en colonnes    
+    lst = np.reshape(lst, (int(len(lst)/8), 8))
+    print(len(lst))
+    
+    #Ajout ds une liste temp puis ds tab final des données + l'année et le sexe
+    for lign in range(len(lst)) :        
+        an=(ann,s)
+        lst_temp=np.append(lst[lign,:],an)          
+        tab_final.append(lst_temp)
 
 
+#création du data frame avec les différentes colonnes########################################################################
 
-
-df = pd.DataFrame(data=tb,columns=['rang','Noms','Pays','Performances','Null','Nb','Ville','Date','Annee','Sexe'])
+df = pd.DataFrame(data=tab_final,columns=['rang','Noms','Pays','Performances','Null','Nb','Ville','Date','Annee','Sexe'])
 
     
+#Conversion data frame en xls#################################################################################################
+# writer = pd.ExcelWriter(r'C:\Users\utilisateur\Documents\Python\Scraping\Briefs_projet.xlsx')
+# df.to_excel(writer,'Sheet1')
 
-writer = pd.ExcelWriter(r'C:\Users\utilisateur\Documents\Python\Scraping\Briefs_projet.xlsx')
-df.to_excel(writer,'Sheet1')
-
-writer.save()
+# writer.save()
+#Conversion data frame en csv#################################################################################################
+df.to_csv(r'C:\Users\utilisateur\Documents\Python\Scraping\Briefs_projet.csv')
